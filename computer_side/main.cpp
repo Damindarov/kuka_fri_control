@@ -5,8 +5,10 @@
 #include <iomanip>
 
 #include "logger/jarraylogger.hpp"
+#include "control/control.hpp"
 
 using namespace KUKA_CONTROL;
+using namespace kuka_control;
 
 int main(int argc, char **argv)
 {   
@@ -28,12 +30,16 @@ int main(int argc, char **argv)
     double q_dot = 0;
     bool flag1 = true;
 
+    Control contrololo(0, 0, 1.5, 0.005);
+
     jarray initial_position = kuka.getJointPosition();
     LOGGER::JArrayLogger pos_logger("actual_position");
     LOGGER::JArrayLogger torq_logger("actual_torque");
 
     LOGGER::JArrayLogger commanded_pos_logger("commanded_position");
     LOGGER::JArrayLogger commanded_torq_logger("commanded_torque");
+
+    contrololo.setPreviousPos(initial_position[6]);
 
     while (true)
     {
@@ -43,30 +49,15 @@ int main(int argc, char **argv)
         pos_logger.log(current_position);
         torq_logger.log(current_torque);
 
-        //torque[5] += 0.1;
-        q_dot = (current_position[5] - prev_pos) / 0.005;
+        initial_position[6] = current_position[6];
+
+        last_joint_torque = contrololo.calcTorque(current_position[6], 15*M_PI/180);
+        std::cout << last_joint_torque << std::endl;
         
-        last_joint_torque = Kp * (q_desired_ - current_position[5]) /* - Kd * q_dot */;
-        if (abs(q_dot) > 0.5){
-            last_joint_torque = 0;
-            flag1 = false;
-        }else{
-            flag1 = true;
-        }
-        if(flag1)
-            std::cout << std::setprecision(4) << current_position[5] << "\t\t" << q_dot << "\t\t" << current_torque[5] << "\t\t" << last_joint_torque << '\n';
-        
-        prev_pos = current_position[5];
-
-        // current_position[5]
-        // current_position[5] += 0.0001;
-
-        initial_position[5] = current_position[5];
-
         commanded_pos_logger.log(initial_position);
-        commanded_torq_logger.log({0, 0, 0, 0, 0, last_joint_torque, 0});
+        commanded_torq_logger.log({0, 0, 0, 0, 0, 0, last_joint_torque});
         kuka.setTargetJointPosition(initial_position);
-        kuka.setTargetJointTorque({0, 0, 0, 0, 0, last_joint_torque, 0});
+        kuka.setTargetJointTorque({0, 0, 0, 0, 0, 0, last_joint_torque});
         // kuka.setTarget(torque);
         std::this_thread::sleep_for(std::chrono::microseconds(900));
     }

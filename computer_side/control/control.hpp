@@ -3,6 +3,7 @@
 
 #include <Eigen/Dense>
 #include <algorithm>  
+#include <iostream>
 
 namespace kuka_control
 {
