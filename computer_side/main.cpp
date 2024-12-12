@@ -57,7 +57,7 @@ int main(int argc, char **argv)
         commanded_pos_logger.log(initial_position);
         commanded_torq_logger.log({0, 0, 0, 0, 0, 0, last_joint_torque});
         kuka.setTargetJointPosition(initial_position);
-        kuka.setTargetJointTorque({0, 0, 0, 0, 0, 0, last_joint_torque});
+        kuka.setTargetJointTorque({0, 0, 0, 0, 0, 0, 0});
         // kuka.setTarget(torque);
         std::this_thread::sleep_for(std::chrono::microseconds(900));
     }
