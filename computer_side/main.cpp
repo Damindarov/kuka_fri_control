@@ -3,6 +3,7 @@
 #include <thread>
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 
 #include "logger/jarraylogger.hpp"
 #include "control/control.hpp"
@@ -41,6 +42,8 @@ int main(int argc, char **argv)
 
     contrololo.setPreviousPos(initial_position[6]);
 
+    auto st = std::chrono::steady_clock::now();
+
     while (true)
     {
         current_position = kuka.getJointPosition();
@@ -51,13 +54,18 @@ int main(int argc, char **argv)
 
         initial_position[6] = current_position[6];
 
-        last_joint_torque = contrololo.calcTorque(current_position[6], 15*M_PI/180);
+        auto en = std::chrono::steady_clock::now();
+        std::chrono::duration<double> delta = en - st;
+        // std::cout << delta.count() << std::endl;
+
+        last_joint_torque = contrololo.calcTorque(current_position[6], 0*M_PI/180);
+        // last_joint_torque = 1. * cos(delta.count()/2.5);
         std::cout << last_joint_torque << std::endl;
         
         commanded_pos_logger.log(initial_position);
         commanded_torq_logger.log({0, 0, 0, 0, 0, 0, last_joint_torque});
         kuka.setTargetJointPosition(initial_position);
-        kuka.setTargetJointTorque({0, 0, 0, 0, 0, 0, 0});
+        kuka.setTargetJointTorque({0, 0, 0, 0, 0, 0, last_joint_torque});
         // kuka.setTarget(torque);
         std::this_thread::sleep_for(std::chrono::microseconds(900));
     }
